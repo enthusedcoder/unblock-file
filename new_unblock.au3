@@ -37,33 +37,42 @@ If $aCmdLine[1] = "/?" And Int($aCmdLine[0]) = 1 Then
 ElseIf $aCmdLine[1] = "/?" And Int($aCmdLine[0]) > 1 Then
 	ConsoleWriteError('Unexpected number of arguments.  For information on how to use this tool, run "new_unblock.exe /?".' & @CRLF)
 Else
+	$setrec = _ArraySearch ( $aCmdLine, "/r" )
+	If @error Then
+		SetError (0)
+		$recurs = False
+	Else
+		_ArrayDelete ( $aCmdLine, $setrec )
+		$aCmdLine[0] = $aCmdLine[0] - 1
+		$recurs = True
+	Endif
 	For $i = 1 To $aCmdLine[0] Step 1
-		If ($aCmdLine[$i] = "/r" Or $aCmdLine[$i] = "-r") And $i = 1 Then
-			$recurs = True
-			ContinueLoop
-		EndIf
-		If IsFile($aCmdLine[$i]) = 0 Then
-			If $recurs = True Then
-				$files = _FileListToArrayRec($aCmdLine[$i], "*", $FLTAR_FILES, $FLTAR_RECUR)
+		If FileExists ( $aCmdLine[$i] ) Then
+			If IsFile($aCmdLine[$i]) = 0 Then
+				If $recurs = True Then
+					$files = _FileListToArrayRec($aCmdLine[$i], "*", $FLTAR_FILES, $FLTAR_RECUR)
+				Else
+					$files = _FileListToArray($aCmdLine[$i], "*", $FLTA_FILES)
+				EndIf
+				For $b = 1 To $files[0] Step 1
+					If FileExists($aCmdLine[$i] & "\" & $files[$b] & ":Zone.Identifier") Then
+						ConsoleWrite ( "Unblocking file " & $aCmdLine[$i] & "\" & $files[$b] & @CRLF )
+						_WinAPI_DeleteFile($aCmdLine[$i] & "\" & $files[$b] & ":Zone.Identifier:$DATA")
+					Else
+						ContinueLoop
+					EndIf
+				Next
 			Else
-				$files = _FileListToArray($aCmdLine[$i], "*", $FLTA_FILES)
-			EndIf
-			For $b = 1 To $files[0] Step 1
-				If FileExists($aCmdLine[$i] & "\" & $files[$b] & ":Zone.Identifier") Then
-					ConsoleWrite ( "Unblocking file " & $aCmdLine[$i] & "\" & $files[$b] & @CRLF )
-					_WinAPI_DeleteFile($aCmdLine[$i] & "\" & $files[$b] & ":Zone.Identifier:$DATA")
+				If FileExists($aCmdLine[$i] & ":Zone.Identifier") Then
+					ConsoleWrite ( "Unblocking file " & $aCmdLine[$i] & @CRLF )
+					_WinAPI_DeleteFile($aCmdLine[$i] & ":Zone.Identifier:$DATA")
 				Else
 					ContinueLoop
 				EndIf
-			Next
-		Else
-			If FileExists($aCmdLine[$i] & ":Zone.Identifier") Then
-				ConsoleWrite ( "Unblocking file " & $aCmdLine[$i] & @CRLF )
-				_WinAPI_DeleteFile($aCmdLine[$i] & ":Zone.Identifier:$DATA")
-			Else
-				ContinueLoop
 			EndIf
-		EndIf
+		Else
+			ConsoleWriteError ( $aCmdLine[$i] & " does not exist.  Skipping..." & @CRLF )
+		Endif
 	Next
 	ConsoleWrite ( "DONE" & @CRLF )
 EndIf
