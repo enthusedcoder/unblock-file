@@ -75,6 +75,7 @@ Else
 		Endif
 	Next
 	ConsoleWrite ( "DONE" & @CRLF )
+	Sleep ( 4000 )
 EndIf
 
 
